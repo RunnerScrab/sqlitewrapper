@@ -6,6 +6,13 @@ SQLiteRow::SQLiteRow(SQLiteTable* table)
 	m_table = table;
 	for(SQLiteColumn* col : table->m_columns)
 	{
+		if(SQLiteColumn::KeyType::KEY_NONE != col->GetKeyType())
+		{
+			//Don't set a default value for a key type so we can tell
+			//easily if one was not provided by the user
+			continue;
+		}
+
 		switch(col->GetType())
 		{
 		case SQLiteVariant::StoredType::VARNONE:

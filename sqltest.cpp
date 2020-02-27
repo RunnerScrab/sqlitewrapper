@@ -24,12 +24,32 @@ int main(void)
 	testtable.AddColumn("height", SQLiteVariant::StoredType::VARREAL);
 	testtable.AddColumn("mass", SQLiteVariant::StoredType::VARREAL);
 
+	SQLiteTable inventory(pDB, "inventorytable", &testtable);
+	inventory.AddColumn("id", SQLiteVariant::StoredType::VARINT, SQLiteColumn::KeyType::KEY_PRIMARY);
+	inventory.AddColumn("owner_uuid", SQLiteVariant::StoredType::VARTEXT, SQLiteColumn::KeyType::KEY_FOREIGN);
+	inventory.AddColumn("item_name", SQLiteVariant::StoredType::VARTEXT);
+	inventory.AddColumn("item_sdesc", SQLiteVariant::StoredType::VARTEXT);
+
 	SQLiteRow row(&testtable);
 	row.SetColumnValue("uuid", "meower1");
 	row.SetColumnValue("age", 34);
 	row.SetColumnValue("sdesc", "a meower");
 	row.SetColumnValue("height", 20);
-	testtable.StoreRow(&row);
+
+	if(SQLITE_ERROR == testtable.StoreRow(&row))
+	{
+		printf("FAILED TO STORE TESTTABLE ROW\n");
+	}
+
+	SQLiteRow invrow(&inventory);
+	invrow.SetColumnValue("id", 1);
+	//invrow.SetColumnValue("owner_uuid", "meower1");
+	invrow.SetColumnValue("item_name", "a thingy");
+
+	if(SQLITE_ERROR == inventory.StoreRow(&invrow, &row))
+	{
+		printf("FAILED TO STORE INVENTORY ROW\n");
+	}
 
 	SQLiteRow searchrow(&testtable);
 	searchrow.SetColumnValue("uuid", "meower1");

@@ -47,6 +47,11 @@ public:
 		return VariantTypeToString(m_coltype);
 	}
 
+	KeyType GetKeyType()
+	{
+		return m_keytype;
+	}
+
 	bool IsPrimaryKey()
 	{
 		return KEY_PRIMARY == m_keytype || KEY_AUTO_PRIMARY == m_keytype;

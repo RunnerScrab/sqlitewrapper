@@ -9,6 +9,8 @@ SQLiteTable::SQLiteTable(sqlite3* pDB, const char* tablename,
 	m_pDB = pDB;
 	m_tablename = tablename;
 	m_parent_table = parent_table;
+	m_primary_keycol = 0;
+	m_foreign_keycol = 0;
 }
 
 SQLiteTable::~SQLiteTable()
@@ -31,10 +33,20 @@ void SQLiteTable::AddColumn(const std::string& name, SQLiteVariant::StoredType v
 		break;
 	case SQLiteColumn::KeyType::KEY_PRIMARY:
 	case SQLiteColumn::KeyType::KEY_AUTO_PRIMARY:
-		m_primary_keycol = m_columns.back();
+		if(!m_primary_keycol)
+		{
+			//Only use the first provided primary key if the user for some reason is a numbskull
+			printf("Setting primary key for column %s\n", name.c_str());
+			m_primary_keycol = m_columns.back();
+		}
 		break;
 	case SQLiteColumn::KeyType::KEY_FOREIGN:
-		m_foreign_keycol = m_columns.back();
+		if(!m_foreign_keycol)
+		{
+			m_foreign_keycol = m_columns.back();
+		}
+		break;
+	default:
 		break;
 	}
 }
@@ -255,14 +267,17 @@ int SQLiteTable::StoreRow(SQLiteRow* pRow, SQLiteRow* pParentRow)
 		}
 	}
 
-
 	return PerformUpsert(pRow, pParentRow);
 }
 
 int SQLiteTable::PerformUpsert(SQLiteRow* pRow, SQLiteRow* pParentRow)
 {
-	std::string insertstr = "INSERT INTO "+ m_tablename +"(" + ProduceInsertValuesNameList() + ") VALUES(" +
-		ProducePlaceholderList() + ") ON CONFLICT(" + m_primary_keycol->GetName() +") DO UPDATE SET " + ProduceUpdateList() + ";";
+	std::string insertstr = "INSERT INTO "+ m_tablename;
+	insertstr += "(" + ProduceInsertValuesNameList() + ") VALUES(";
+	insertstr += ProducePlaceholderList() + ") ON CONFLICT(";
+	insertstr += m_primary_keycol->GetName() +") DO UPDATE SET ";
+	insertstr += ProduceUpdateList() + ";";
+
 	printf("Insert str: %s\n", insertstr.c_str());
 	sqlite3_stmt* query = 0;
 	if(SQLITE_OK != sqlite3_prepare_v2(m_pDB, insertstr.c_str(), insertstr.length(),  &query, 0))
@@ -281,23 +296,37 @@ int SQLiteTable::PerformUpsert(SQLiteRow* pRow, SQLiteRow* pParentRow)
 	for(size_t idx = 0, len = m_columns.size(); idx < len; ++idx)
 	{
 		SQLiteColumn* pcol = m_columns[idx];
-		if(pcol->IsForeignKey())
+		SQLiteVariant* var = pRow->GetColumnValue(pcol->GetName());
+
+		if(pcol->IsForeignKey() && !var)
 		{
-			if(m_parent_table && m_parent_table->m_primary_keycol
+			if((m_parent_table && m_parent_table->m_primary_keycol)
 				&& pParentRow && m_foreign_keycol)
 			{
-				pRow->SetColumnValue(m_foreign_keycol->GetName(),
-						pParentRow->GetColumnValue(m_parent_table->m_primary_keycol->GetName()));
+				std::string foreignkeyname = m_foreign_keycol->GetName();
+				std::string parentcolvalue;
+				pParentRow->GetColumnValue(m_parent_table->m_primary_keycol->GetName(), parentcolvalue);
+				printf("Setting column value for foreign keycol %s to %s\n", foreignkeyname.c_str(), parentcolvalue.c_str());
+				pRow->SetColumnValue(foreignkeyname, parentcolvalue);
+				var = pRow->GetColumnValue(foreignkeyname);
 			}
 			else
 			{
 				printf("Table has a foreign key constraint but was not given primary key data from the parent table\n");
+				if(!m_parent_table)
+					printf("\tDidn't have parent table\n");
+				if(!m_parent_table->m_primary_keycol)
+					printf("\tParent table didn't have primary keycol set.\n");
+				if(!pParentRow)
+					printf("\tWasn't given the row from the parent table.\n");
+				if(!m_foreign_keycol)
+					printf("\tDidn't have a foreign keycol set.\n");
 				sqlite3_finalize(query);
 				return SQLITE_ERROR;
 			}
 		}
-		else if(SQLITE_OK !=
-			BindVariantToStatement(query, pRow->GetColumnValue(pcol->GetName()), idx + 1))
+
+		if(SQLITE_OK != BindVariantToStatement(query, var, idx + 1))
 		{
 			sqlite3_finalize(query);
 			printf("Failed to bind value %lu for column %s\n", idx, pcol->GetName().c_str());
