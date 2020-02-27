@@ -131,14 +131,14 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const char* data, con
 	var->SetValue(data, datalen);
 }
 
-const SQLiteVariant* SQLiteRow::GetColumnValue(const std::string& colname) const
+SQLiteVariant* SQLiteRow::GetColumnValue(const std::string& colname)
 {
 	return m_valuemap[colname];
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, int& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, int& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -150,9 +150,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, int& out) const
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, unsigned int& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, unsigned int& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -164,9 +164,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, unsigned int& out) co
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, long long& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, long long& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -178,9 +178,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, long long& out) const
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, unsigned long long& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, unsigned long long& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -192,9 +192,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, unsigned long long& o
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, float& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, float& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -206,9 +206,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, float& out) const
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, double& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, double& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -220,9 +220,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, double& out) const
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, std::string& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, std::string& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);
@@ -234,9 +234,9 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, std::string& out) con
 	}
 }
 
-bool SQLiteRow::GetColumnValue(const std::string& colname, std::vector<char>& out) const
+bool SQLiteRow::GetColumnValue(const std::string& colname, std::vector<char>& out)
 {
-	const SQLiteVariant* var = m_valuemap[colname];
+	SQLiteVariant* var = m_valuemap[colname];
 	if(var)
 	{
 		var->GetValue(out);

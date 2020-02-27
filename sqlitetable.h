@@ -32,22 +32,22 @@ public:
 		m_keytype = std::move(other.m_keytype);
 	}
 
-	const std::string& GetName() const
+	std::string& GetName()
 	{
 		return m_name;
 	}
 
-	const std::string GetTypeAsString() const
+	const std::string GetTypeAsString()
 	{
 		return VariantTypeToString(m_coltype);
 	}
 
-	bool IsPrimaryKey() const
+	bool IsPrimaryKey()
 	{
 		return KEY_PRIMARY == m_keytype || KEY_AUTO_PRIMARY == m_keytype;
 	}
 
-	bool IsForeignKey() const
+	bool IsForeignKey()
 	{
 		return KEY_FOREIGN == m_keytype;
 	}
@@ -72,9 +72,9 @@ public:
 		       SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE);
 
 	int LoadRow(SQLiteRow* row);
-	int StoreRow(const SQLiteRow* row, const SQLiteRow* pParentRow = 0);
+	int StoreRow(SQLiteRow* row, SQLiteRow* pParentRow = 0);
 private:
-	int PerformUpsert(const SQLiteRow* row, const SQLiteRow* parent_row = 0);
+	int PerformUpsert(SQLiteRow* row, SQLiteRow* parent_row = 0);
 	//The a list of SQLite assignments to all the columns during an upsert (update/insert)
 	std::string ProduceUpdateList();
 	//The names of all the columns prepended by $, without type declarations

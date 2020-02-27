@@ -197,7 +197,7 @@ int SQLiteTable::LoadRow(SQLiteRow* pRow)
 	return SQLITE_OK;
 }
 
-int SQLiteTable::StoreRow(const SQLiteRow* pRow, const SQLiteRow* pParentRow)
+int SQLiteTable::StoreRow(SQLiteRow* pRow, SQLiteRow* pParentRow)
 {
 	if(!m_primary_keycol)
 	{
@@ -258,7 +258,7 @@ int SQLiteTable::StoreRow(const SQLiteRow* pRow, const SQLiteRow* pParentRow)
 	return PerformUpsert(pRow, pParentRow);
 }
 
-int SQLiteTable::PerformUpsert(const SQLiteRow* pRow, const SQLiteRow* pParentRow)
+int SQLiteTable::PerformUpsert(SQLiteRow* pRow, SQLiteRow* pParentRow)
 {
 	std::string insertstr = "INSERT INTO "+ m_tablename +"(" + ProduceInsertValuesNameList() + ") VALUES(" +
 		ProducePlaceholderList() + ") ON CONFLICT(" + m_primary_keycol->GetName() +") DO UPDATE SET " + ProduceUpdateList() + ";";
@@ -296,7 +296,7 @@ int SQLiteTable::PerformUpsert(const SQLiteRow* pRow, const SQLiteRow* pParentRo
 			}
 		}
 		else if(SQLITE_OK !=
-			BindVariantToSQLiteStatement(query, pRow->GetColumnValue(pcol->GetName()), idx + 1))
+			BindVariantToStatement(query, pRow->GetColumnValue(pcol->GetName()), idx + 1))
 		{
 			sqlite3_finalize(query);
 			printf("Failed to bind value %lu\n", idx);

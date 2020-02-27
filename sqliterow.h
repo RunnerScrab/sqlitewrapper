@@ -30,16 +30,16 @@ public:
 	void SetColumnValue(const std::string& colname, const std::string& v);
 	void SetColumnValue(const std::string& colname, const char* data, const size_t datalen);
 
-	const SQLiteVariant* GetColumnValue(const std::string& colname) const;
+	SQLiteVariant* GetColumnValue(const std::string& colname);
 
-	bool GetColumnValue(const std::string& colname, int& out) const;
-	bool GetColumnValue(const std::string& colname, unsigned int& out) const;
-	bool GetColumnValue(const std::string& colname, long long& out) const;
-	bool GetColumnValue(const std::string& colname, unsigned long long& out) const;
-	bool GetColumnValue(const std::string& colname, float& out) const;
-	bool GetColumnValue(const std::string& colname, double& out) const;
-	bool GetColumnValue(const std::string& colname, std::string& out) const;
-	bool GetColumnValue(const std::string& colname, std::vector<char>& out) const;
+	bool GetColumnValue(const std::string& colname, int& out);
+	bool GetColumnValue(const std::string& colname, unsigned int& out);
+	bool GetColumnValue(const std::string& colname, long long& out);
+	bool GetColumnValue(const std::string& colname, unsigned long long& out);
+	bool GetColumnValue(const std::string& colname, float& out);
+	bool GetColumnValue(const std::string& colname, double& out);
+	bool GetColumnValue(const std::string& colname, std::string& out);
+	bool GetColumnValue(const std::string& colname, std::vector<char>& out);
 };
 
 #endif

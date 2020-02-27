@@ -42,7 +42,7 @@ public:
 		m_storedtype = vartype;
 	}
 
-	bool HasType() const
+	bool HasType()
 	{
 		return VARNONE != m_storedtype;
 	}
@@ -52,7 +52,7 @@ public:
 		return m_storedtype;
 	}
 
-	const std::string GetTypeAsString() const
+	const std::string GetTypeAsString()
 	{
 		static const char* typestrs[] = {"NULL", "INT", "REAL", "BLOB", "TEXT"};
 		return std::string(typestrs[static_cast<int>(m_storedtype)]);
