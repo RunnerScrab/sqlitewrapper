@@ -1,7 +1,13 @@
 #include "sqlitevariant.h"
+#include "sqlite/sqlite3.h"
 
 int BindVariantToStatement(sqlite3_stmt* stmt, const SQLiteVariant* value, int pos)
 {
+	if(!value)
+	{
+		printf("Given a 0 variant pointer!\n");
+		return SQLITE_ERROR;
+	}
 	switch(value->GetType())
 	{
 	case SQLiteVariant::StoredType::VARINT:

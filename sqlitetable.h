@@ -32,6 +32,11 @@ public:
 		m_keytype = std::move(other.m_keytype);
 	}
 
+	SQLiteVariant::StoredType GetType()
+	{
+		return m_coltype;
+	}
+
 	std::string& GetName()
 	{
 		return m_name;
@@ -59,6 +64,7 @@ public:
 //using row data as input
 class SQLiteTable
 {
+	friend class SQLiteRow;
 	std::vector<SQLiteColumn*> m_columns;
 	SQLiteColumn* m_primary_keycol, *m_foreign_keycol;
 	SQLiteTable* m_parent_table;

@@ -1,8 +1,29 @@
 #include "sqliterow.h"
+#include "sqlitetable.h"
 
-SQLiteRow::SQLiteRow()
+SQLiteRow::SQLiteRow(SQLiteTable* table)
 {
-
+	m_table = table;
+	for(SQLiteColumn* col : table->m_columns)
+	{
+		switch(col->GetType())
+		{
+		case SQLiteVariant::StoredType::VARNONE:
+			break;
+		case SQLiteVariant::StoredType::VARINT:
+			SetColumnValue(col->GetName(), 0);
+			break;
+		case SQLiteVariant::StoredType::VARREAL:
+			SetColumnValue(col->GetName(), 0.0);
+			break;
+		case SQLiteVariant::StoredType::VARBLOB:
+			SetColumnValue(col->GetName(), 0, 0);
+			break;
+		case SQLiteVariant::StoredType::VARTEXT:
+			SetColumnValue(col->GetName(), std::string(""));
+			break;
+		}
+	}
 }
 
 SQLiteRow::~SQLiteRow()

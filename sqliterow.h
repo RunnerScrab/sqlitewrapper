@@ -6,14 +6,16 @@
 
 #include "sqlitevariant.h"
 
+class SQLiteTable;
+
 //Contains the values of the row
 class SQLiteRow
 {
 	std::vector<SQLiteVariant*> m_values;
 	std::unordered_map<std::string, SQLiteVariant*> m_valuemap;
-
+	SQLiteTable* m_table;
 public:
-	SQLiteRow();
+	SQLiteRow(SQLiteTable* table);
 	~SQLiteRow();
 
 	void ClearValues();

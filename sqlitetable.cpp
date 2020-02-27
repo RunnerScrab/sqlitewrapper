@@ -17,9 +17,10 @@ SQLiteTable::~SQLiteTable()
 	for(; idx < len; ++idx)
 	{
 		delete m_columns[idx];
-		m_columns[idx] = 0;
 	}
 }
+
+
 
 void SQLiteTable::AddColumn(const std::string& name, SQLiteVariant::StoredType vartype, SQLiteColumn::KeyType keytype)
 {
@@ -299,7 +300,7 @@ int SQLiteTable::PerformUpsert(SQLiteRow* pRow, SQLiteRow* pParentRow)
 			BindVariantToStatement(query, pRow->GetColumnValue(pcol->GetName()), idx + 1))
 		{
 			sqlite3_finalize(query);
-			printf("Failed to bind value %lu\n", idx);
+			printf("Failed to bind value %lu for column %s\n", idx, pcol->GetName().c_str());
 			return SQLITE_ERROR;
 		}
 	}

@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <string>
 #include <vector>
-#include <variant>
+#include <algorithm>
 #include <cstring>
 #include "sqlite/sqlite3.h"
 
@@ -235,13 +235,13 @@ public:
 			{
 				if(len > m_reservedlen)
 				{
-					m_reservedlen = len << 1;
+					m_reservedlen = std::max((len << 1), (size_t) 4);
 					m_data.as_blob = (char*) realloc(m_data.as_blob, m_reservedlen);
 				}
 			}
 		}
 
-		m_datalen = len;
+		m_datalen = std::max(len, (size_t) 4);
 
 		if(!m_data.as_blob)
 		{
@@ -250,7 +250,10 @@ public:
 		}
 
 		memset(m_data.as_blob, 0, m_reservedlen);
-		memcpy(m_data.as_blob, data, m_datalen);
+		if(data)
+		{
+			memcpy(m_data.as_blob, data, m_datalen);
+		}
 		m_storedtype = VARBLOB;
 	}
 

@@ -1,6 +1,6 @@
 CXX = g++
 CC = gcc
-LDLIBS = -g -pg -lpthread -ldl
+LDLIBS = -g -lpthread -ldl
 
 SOURCE = $(wildcard *.cpp)
 OBJS = $(SOURCE:.c=.o)
