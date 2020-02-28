@@ -32,6 +32,11 @@ public:
 		m_keytype = std::move(other.m_keytype);
 	}
 
+	void SetColumnType(SQLiteVariant::StoredType type)
+	{
+		m_coltype = type;
+	}
+
 	SQLiteVariant::StoredType GetType()
 	{
 		return m_coltype;

@@ -42,6 +42,11 @@ public:
 	bool GetColumnValue(const std::string& colname, double& out);
 	bool GetColumnValue(const std::string& colname, std::string& out);
 	bool GetColumnValue(const std::string& colname, std::vector<char>& out);
+
+	int Load();
+	int Store(SQLiteRow* parent_row = 0);
+private:
+	void InitFromTable(SQLiteTable* table);
 };
 
 #endif

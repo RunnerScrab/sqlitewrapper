@@ -64,6 +64,15 @@ int main(void)
 			uuid.c_str(), age, sdesc.c_str());
 	}
 
+	searchrow.ClearValues();
+	searchrow.SetColumnValue("owner_uuid", "meower1");
+	if(SQLITE_OK == inventory.LoadRow(&searchrow))
+	{
+		std::string sdesc, uuid;
+		searchrow.GetColumnValue("uuid", uuid);
+		searchrow.GetColumnValue("sdesc", sdesc);
+		printf("Found %s with sdesc %s\n", uuid.c_str(), sdesc.c_str());
+	}
 	sqlite3_close(pDB);
 
 	return 0;

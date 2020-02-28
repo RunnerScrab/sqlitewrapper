@@ -1,9 +1,8 @@
 #include "sqliterow.h"
 #include "sqlitetable.h"
 
-SQLiteRow::SQLiteRow(SQLiteTable* table)
+void SQLiteRow::InitFromTable(SQLiteTable* table)
 {
-	m_table = table;
 	for(SQLiteColumn* col : table->m_columns)
 	{
 		if(SQLiteColumn::KeyType::KEY_NONE != col->GetKeyType())
@@ -33,6 +32,12 @@ SQLiteRow::SQLiteRow(SQLiteTable* table)
 	}
 }
 
+SQLiteRow::SQLiteRow(SQLiteTable* table)
+{
+	m_table = table;
+	InitFromTable(table);
+}
+
 SQLiteRow::~SQLiteRow()
 {
 	size_t idx = 0, len = m_values.size();
@@ -48,6 +53,7 @@ void SQLiteRow::ClearValues()
 	{
 		var->ClearValue();
 	}
+	m_valuemap.clear();
 }
 
 void SQLiteRow::SetColumnValue(const std::string& colname, const SQLiteVariant* value)
@@ -273,5 +279,29 @@ bool SQLiteRow::GetColumnValue(const std::string& colname, std::vector<char>& ou
 	else
 	{
 		return false;
+	}
+}
+
+int SQLiteRow::Load()
+{
+	if(m_table)
+	{
+		return m_table->LoadRow(this);
+	}
+	else
+	{
+		return SQLITE_ERROR;
+	}
+}
+
+int SQLiteRow::Store(SQLiteRow* parent_row)
+{
+	if(m_table)
+	{
+		return m_table->StoreRow(this, parent_row);
+	}
+	else
+	{
+		return SQLITE_ERROR;
 	}
 }

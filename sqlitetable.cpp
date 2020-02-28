@@ -31,8 +31,15 @@ void SQLiteTable::AddColumn(const std::string& name, SQLiteVariant::StoredType v
 	{
 	case SQLiteColumn::KeyType::KEY_NONE:
 		break;
-	case SQLiteColumn::KeyType::KEY_PRIMARY:
+
 	case SQLiteColumn::KeyType::KEY_AUTO_PRIMARY:
+		//An automatic key in sqlite is just an INTEGER PRIMARY KEY, though it will reuse previously used ROWIDs.
+		//Autoincrementing keys will not reuse previously used ROWIDs.
+
+		m_columns.back()->SetColumnType(SQLiteVariant::StoredType::VARINT);
+
+		//We must drop through to the next case!
+	case SQLiteColumn::KeyType::KEY_PRIMARY:
 		if(!m_primary_keycol)
 		{
 			//Only use the first provided primary key if the user for some reason is a numbskull
