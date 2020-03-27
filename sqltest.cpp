@@ -130,6 +130,9 @@ int main(void)
 		printf("LoadSubTable FAILED!\n");
 	}
 
+	for(auto* it : outarray)
+		delete it;
+
 	sqlite3_close(pDB);
 	printf("Closed database connection.\n");
 	return 0;
