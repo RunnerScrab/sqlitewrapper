@@ -127,6 +127,8 @@ private:
 	std::string GetPrimaryKeyStringList();
 	std::string GetForeignKeyStringList();
 	std::string ProduceSelectConditionString();
+	std::string ProduceSubTableSelectConditionString();
+
 	size_t GetPrimaryKeyCount()
 	{
 		return m_primary_keycols.size();
@@ -151,7 +153,7 @@ public:
 	#ifndef TESTING_
 	bool LoadSubTable(SQLiteRow* parent_row, CScriptArray* resultarray);
 	#else
-	bool LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow>& resultarray);
+	bool LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow*>& resultarray);
 	#endif
 
 	bool AddColumn(const std::string& name, SQLiteVariant::StoredType vartype,

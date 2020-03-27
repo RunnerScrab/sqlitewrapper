@@ -62,7 +62,7 @@ int main(void)
 		trow->SetColumnValue("sdesc", "a meower");
 		trow->StoreChildRowIntoDB(&row);
 	}
-
+	delete trow;
 
 	SQLiteRow invrow(&inventory);
 	invrow.SetColumnValue("id", 2);
@@ -119,7 +119,16 @@ int main(void)
 
 
 
-
+	std::vector<SQLiteRow*> outarray;
+	if(testinvtable->LoadSubTable(&row, outarray))
+	{
+		printf("LoadSubTable succeeded. There are %lu elements in the array.\n",
+			outarray.size());
+	}
+	else
+	{
+		printf("LoadSubTable FAILED!\n");
+	}
 
 	sqlite3_close(pDB);
 	printf("Closed database connection.\n");

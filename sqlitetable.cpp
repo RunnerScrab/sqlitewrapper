@@ -379,11 +379,40 @@ std::string SQLiteTable::GetForeignKeyStringList()
 	{
 		if(idx < (len -1))
 		{
-			retval += m_foreign_keycols[idx]->GetName() + ",";
+			retval += m_foreign_keycols[idx]->GetName() + "," ;
 		}
 		else
 		{
 			retval += m_foreign_keycols[idx]->GetName();
+		}
+	}
+	return retval;
+}
+
+std::string SQLiteTable::ProduceSubTableSelectConditionString()
+{
+	if(m_foreign_keycols.empty())
+	{
+		dbgprintf("SubTable has no foreign keycols!\n");
+	}
+	else
+	{
+		dbgprintf("SubTable has %lu foreign keycols.\n", m_foreign_keycols.size());
+	}
+
+	std::string retval;
+	for(size_t idx = 0, len = m_foreign_keycols.size();
+	    idx < len; ++idx)
+	{
+		SQLiteColumn* pkeycol = m_foreign_keycols[idx];
+		dbgprintf("Found keycol with name '%s'\n", pkeycol->GetName().c_str());
+		if(idx < (len - 1))
+		{
+			retval += pkeycol->GetName() + "=$" + pkeycol->GetName() + " AND ";
+		}
+		else
+		{
+			retval += pkeycol->GetName() + "=$" + pkeycol->GetName();
 		}
 	}
 	return retval;
@@ -512,7 +541,7 @@ bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, CScriptArray* resultarray)
 	return true;
 }
 #else
-bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow>& resultarray)
+bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow*>& resultarray)
 {
 	//Called from the sub table
 
@@ -534,7 +563,7 @@ bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow>& re
 
 	sqlite3_stmt* query = 0;
 	std::string selectquerystr = "select " + ProduceInsertValuesNameList() + " from " +
-		m_tablename + " where " + ProduceSelectConditionString();
+		m_tablename + " where " + ProduceSubTableSelectConditionString() + ";";
 
 	dbgprintf("LoadSubTable Query: %s\n", selectquerystr.c_str());
 	result = sqlite3_prepare_v2(m_pDB, selectquerystr.c_str(), -1, &query, 0);
@@ -573,8 +602,8 @@ bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow>& re
 			break;
 		}
 
-		resultarray.emplace_back(SQLiteRow(this));
-		pRow = &resultarray.back();
+		resultarray.emplace_back(new SQLiteRow(this));
+		pRow = resultarray.back();
 		int columns = sqlite3_column_count(query);
 		int idx = 0;
 		for(; idx < columns; ++idx)
