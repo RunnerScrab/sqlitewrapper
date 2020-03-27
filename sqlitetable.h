@@ -1,35 +1,44 @@
 #ifndef SQLITETABLE_H_
 #define SQLITETABLE_H_
 #include <vector>
+#include <map>
 #include <string>
 #include "sqlitevariant.h"
 
-class SQLiteRow;
+#ifndef TESTING_
+class asIScriptEngine;
+class CScriptArray;
+#endif
 
+class SQLiteRow;
+class SQLiteTable;
 //Contains column name, value type, key type, and may be used to
 //bind values to parameterized sqlite statements
 class SQLiteColumn
 {
 public:
-  	typedef enum {KEY_NONE = 0, KEY_PRIMARY, KEY_AUTO_PRIMARY, KEY_FOREIGN} KeyType;
+  	typedef enum {KEY_NONE = 0, KEY_PRIMARY, KEY_AUTO_PRIMARY, KEY_FOREIGN,
+	KEY_PRIMARY_AND_FOREIGN} KeyType;
 
 private:
 	SQLiteVariant::StoredType m_coltype;
-	std::string m_name;
-	KeyType m_keytype;
-public:
-	SQLiteColumn(const std::string& name, SQLiteVariant::StoredType vartype, KeyType keytype = KEY_NONE)
-	{
-		m_name = name;
-		m_coltype = vartype;
-		m_keytype = keytype;
-	}
 
-	SQLiteColumn(SQLiteColumn&& other)
+	//If this column is a foreign key, its name in the foreign table also
+	//must be provided since they are not necessarily the same
+	std::string m_name, m_foreignkeyname;
+	KeyType m_keytype;
+	SQLiteTable* m_foreigntable;
+public:
+	SQLiteColumn(const std::string& name, SQLiteVariant::StoredType vartype,
+		     KeyType keytype = KEY_NONE, SQLiteTable* foreigntable = 0, const std::string& foreignname = "");
+
+	~SQLiteColumn();
+
+	SQLiteColumn(SQLiteColumn&& other);
+
+	SQLiteTable* GetForeignTable()
 	{
-		m_coltype = std::move(other.m_coltype);
-		m_name = std::move(other.m_name);
-		m_keytype = std::move(other.m_keytype);
+		return m_foreigntable;
 	}
 
 	void SetColumnType(SQLiteVariant::StoredType type)
@@ -42,9 +51,14 @@ public:
 		return m_coltype;
 	}
 
-	std::string& GetName()
+	const std::string& GetName()
 	{
 		return m_name;
+	}
+
+	const std::string& GetForeignName()
+	{
+		return m_foreignkeyname;
 	}
 
 	const std::string GetTypeAsString()
@@ -74,22 +88,34 @@ public:
 //using row data as input
 class SQLiteTable
 {
+public:
+	static sqlite3* m_static_pDB;
+	static void SetDBConnection(sqlite3* pDB);
+	static sqlite3* GetDBConnection();
+#ifndef TESTING_
+	void AddRef();
+	void Release();
+	static SQLiteTable* Factory(const std::string& tablename);
+#endif
+
+private:
 	friend class SQLiteRow;
 	std::vector<SQLiteColumn*> m_columns;
-	SQLiteColumn* m_primary_keycol, *m_foreign_keycol;
-	SQLiteTable* m_parent_table;
+	//A subtable is simply another table whose foreign key is set to the
+	//primary key of the primary table
+	std::map<const std::string, SQLiteTable*> m_subtablemap;
+
+	//A table may have multiple foreign keys, however,
+	//m_subtableforeign key is the key to the owning table for a table
+	//representing an array
+	std::vector<SQLiteColumn*> m_primary_keycols;
+	std::vector<SQLiteColumn*> m_foreign_keycols;
 	std::string m_tablename;
+
 	sqlite3* m_pDB;
-public:
-	SQLiteTable(sqlite3* pDB, const char* tablename, SQLiteTable* parent_table = 0);
-	~SQLiteTable();
+	bool m_bIsSubTable;
+	int m_refcount;
 
-	void AddColumn(const std::string& name, SQLiteVariant::StoredType vartype,
-		       SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE);
-
-	int LoadRow(SQLiteRow* row);
-	int StoreRow(SQLiteRow* row, SQLiteRow* pParentRow = 0);
-private:
 	int PerformUpsert(SQLiteRow* row, SQLiteRow* parent_row = 0);
 	//The a list of SQLite assignments to all the columns during an upsert (update/insert)
 	std::string ProduceUpdateList();
@@ -99,6 +125,80 @@ private:
 	std::string ProduceInsertValuesNameList();
 	//The names of all the columns along with type declarations, for CREATE operation
 	std::string ProducePropertyNameList();
+	std::string GetPrimaryKeyStringList();
+	std::string ProducePrimaryKeyPlaceholderList();
+	std::string ProduceForeignKeyPlaceholderList();
+	std::string GetForeignKeyStringList();
+	std::string ProduceSelectConditionString();
+	size_t GetPrimaryKeyCount()
+	{
+		return m_primary_keycols.size();
+	}
+	size_t GetForeignKeyCount()
+	{
+		return m_foreign_keycols.size();
+	}
+public:
+
+	SQLiteTable(sqlite3* pDB, const char* tablename);
+	~SQLiteTable();
+
+	std::string GetName() const
+	{
+		return m_tablename;
+	}
+
+	SQLiteTable* CreateSubTable(const std::string& name);
+	SQLiteTable* GetSubTable(const std::string& name);
+
+	bool AddColumn(const std::string& name, SQLiteVariant::StoredType vartype,
+		       SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE,
+		       SQLiteTable* foreigntable = 0, const std::string& foreignname = "");
+
+	bool AddIntColumn(const std::string& name,
+			  SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE,
+			  SQLiteTable* foreigntable = 0, const std::string& foreignname = "")
+	{
+		return AddColumn(name, SQLiteVariant::StoredType::VARINT, keytype,
+				 foreigntable, foreignname);
+	}
+
+	bool AddRealColumn(const std::string& name,
+			   SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE,
+			   SQLiteTable* foreigntable = 0, const std::string& foreignname = "")
+	{
+		return AddColumn(name, SQLiteVariant::StoredType::VARREAL, keytype,
+				 foreigntable, foreignname);
+	}
+
+	bool AddTextColumn(const std::string& name,
+			   SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE,
+			   SQLiteTable* foreigntable = 0, const std::string& foreignname = "")
+	{
+		return AddColumn(name, SQLiteVariant::StoredType::VARTEXT, keytype,
+				 foreigntable, foreignname);
+	}
+
+	bool AddBlobColumn(const std::string& name,
+			   SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE,
+			   SQLiteTable* foreigntable = 0, const std::string& foreignname = "")
+	{
+		return AddColumn(name, SQLiteVariant::StoredType::VARBLOB, keytype,
+				 foreigntable, foreignname);
+	}
+
+#ifndef TESTING_
+	bool LoadSubTable(SQLiteRow* parent_row, CScriptArray* resultarray);
+#endif
+
+	int LoadRow(SQLiteRow* row);
+	int StoreRow(SQLiteRow* row, SQLiteRow* pParentRow = 0);
+
+	SQLiteRow* CreateRow();
 };
+
+#ifndef TESTING_
+int RegisterDBTable(sqlite3* sqldb, asIScriptEngine* sengine);
+#endif
 
 #endif

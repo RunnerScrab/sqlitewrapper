@@ -4,16 +4,32 @@
 #include <vector>
 #include <unordered_map>
 
+#include "uuid.h"
 #include "sqlitevariant.h"
 
-class SQLiteTable;
+#ifndef TESTING_
+struct Database;
+class asIScriptEngine;
+#endif
 
+class SQLiteTable;
+struct sqlite3;
 //Contains the values of the row
 class SQLiteRow
 {
+public:
+	#ifndef TESTING_
+	void AddRef();
+	void Release();
+	#endif
+
+	static SQLiteRow* Factory(SQLiteTable*);
+private:
 	std::vector<SQLiteVariant*> m_values;
 	std::unordered_map<std::string, SQLiteVariant*> m_valuemap;
 	SQLiteTable* m_table;
+
+	int m_refcount;
 public:
 	SQLiteRow(SQLiteTable* table);
 	~SQLiteRow();
@@ -31,6 +47,7 @@ public:
 	void SetColumnValue(const std::string& colname, const double v);
 	void SetColumnValue(const std::string& colname, const std::string& v);
 	void SetColumnValue(const std::string& colname, const char* data, const size_t datalen);
+	void SetColumnValue(const std::string& colname, const UUID& uuid);
 
 	SQLiteVariant* GetColumnValue(const std::string& colname);
 
@@ -42,11 +59,18 @@ public:
 	bool GetColumnValue(const std::string& colname, double& out);
 	bool GetColumnValue(const std::string& colname, std::string& out);
 	bool GetColumnValue(const std::string& colname, std::vector<char>& out);
+	bool GetColumnValue(const std::string& colname, UUID& uuidout);
 
-	int Load();
-	int Store(SQLiteRow* parent_row = 0);
+	//These load/store functions just wrap SQLiteTable's
+	bool LoadFromDB();
+	bool StoreIntoDB();
+	bool StoreChildRowIntoDB(SQLiteRow* parent_row = 0);
 private:
 	void InitFromTable(SQLiteTable* table);
 };
+
+#ifndef TESTING_
+int RegisterDBRow(sqlite3* sqldb, asIScriptEngine* sengine);
+#endif
 
 #endif

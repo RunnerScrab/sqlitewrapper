@@ -24,9 +24,11 @@ int main(void)
 	testtable.AddColumn("height", SQLiteVariant::StoredType::VARREAL);
 	testtable.AddColumn("mass", SQLiteVariant::StoredType::VARREAL);
 
-	SQLiteTable inventory(pDB, "inventorytable", &testtable);
+	SQLiteTable inventory(pDB, "inventorytable");
 	inventory.AddColumn("id", SQLiteVariant::StoredType::VARINT, SQLiteColumn::KeyType::KEY_PRIMARY);
-	inventory.AddColumn("owner_uuid", SQLiteVariant::StoredType::VARTEXT, SQLiteColumn::KeyType::KEY_FOREIGN);
+	inventory.AddColumn("owner_uuid", SQLiteVariant::StoredType::VARTEXT,
+			SQLiteColumn::KeyType::KEY_PRIMARY_AND_FOREIGN,
+			&testtable, "uuid");
 	inventory.AddColumn("item_name", SQLiteVariant::StoredType::VARTEXT);
 	inventory.AddColumn("item_sdesc", SQLiteVariant::StoredType::VARTEXT);
 
@@ -36,25 +38,38 @@ int main(void)
 	row.SetColumnValue("sdesc", "a meower");
 	row.SetColumnValue("height", 20);
 
+	printf("Attempting to store testtable row.\n");
 	if(SQLITE_ERROR == testtable.StoreRow(&row))
 	{
 		printf("FAILED TO STORE TESTTABLE ROW\n");
 	}
+	else
+	{
+		printf("Store reported SUCCESS\n");
+	}
 
 	SQLiteRow invrow(&inventory);
-	invrow.SetColumnValue("id", 1);
-	//invrow.SetColumnValue("owner_uuid", "meower1");
-	invrow.SetColumnValue("item_name", "a thingy");
+	invrow.SetColumnValue("id", 2);
+	invrow.SetColumnValue("owner_uuid", "meower1");
+	invrow.SetColumnValue("item_name", "another thingy");
+	invrow.SetColumnValue("item_sdesc", "this is another thingy");
 
+	printf("Attempting to store inventory row.\n");
 	if(SQLITE_ERROR == inventory.StoreRow(&invrow, &row))
 	{
 		printf("FAILED TO STORE INVENTORY ROW\n");
 	}
+	else
+	{
+		printf("Store reported SUCCESS\n");
+	}
 
 	SQLiteRow searchrow(&testtable);
 	searchrow.SetColumnValue("uuid", "meower1");
+	printf("Attempting to load testtable row.\n");
 	if(SQLITE_OK == testtable.LoadRow(&searchrow))
 	{
+		printf("Load SUCCESS\n");
 		std::string uuid, sdesc;
 		int age = 0;
 		searchrow.GetColumnValue("uuid", uuid);
@@ -63,17 +78,29 @@ int main(void)
 		printf("Found %s of age %d and sdesc %s\n",
 			uuid.c_str(), age, sdesc.c_str());
 	}
+	else
+	{
+		printf("Load FAILURE\n");
+	}
+
 
 	searchrow.ClearValues();
 	searchrow.SetColumnValue("owner_uuid", "meower1");
+	searchrow.SetColumnValue("id", 2);
+	printf("Attempting to load inventory row.\n");
 	if(SQLITE_OK == inventory.LoadRow(&searchrow))
 	{
+		printf("Load SUCCESS\n");
 		std::string sdesc, uuid;
-		searchrow.GetColumnValue("uuid", uuid);
-		searchrow.GetColumnValue("sdesc", sdesc);
+		searchrow.GetColumnValue("item_name", uuid);
+		searchrow.GetColumnValue("item_sdesc", sdesc);
 		printf("Found %s with sdesc %s\n", uuid.c_str(), sdesc.c_str());
 	}
+	else
+	{
+		printf("Load FAILURE\n");
+	}
 	sqlite3_close(pDB);
-
+	printf("Closed database connection.\n");
 	return 0;
 }
