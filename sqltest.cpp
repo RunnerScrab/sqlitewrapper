@@ -24,6 +24,10 @@ int main(void)
 	testtable.AddColumn("height", SQLiteVariant::StoredType::VARREAL);
 	testtable.AddColumn("mass", SQLiteVariant::StoredType::VARREAL);
 
+	SQLiteTable* testinvtable = testtable.CreateSubTable("testinv");
+	testinvtable->AddColumn("name", SQLiteVariant::StoredType::VARTEXT);
+	testinvtable->AddColumn("sdesc", SQLiteVariant::StoredType::VARTEXT);
+
 	SQLiteTable inventory(pDB, "inventorytable");
 	inventory.AddColumn("id", SQLiteVariant::StoredType::VARINT, SQLiteColumn::KeyType::KEY_PRIMARY);
 	inventory.AddColumn("owner_uuid", SQLiteVariant::StoredType::VARTEXT,
@@ -47,6 +51,18 @@ int main(void)
 	{
 		printf("Store reported SUCCESS\n");
 	}
+
+	SQLiteRow* trow = testinvtable->CreateRow();
+
+	printf("Attempting to store subtable.\n");
+	for(size_t idx = 0; idx < 10; ++idx)
+	{
+		trow->SetColumnValue("subtable_index", static_cast<unsigned int>(idx));
+		trow->SetColumnValue("name", "meower");
+		trow->SetColumnValue("sdesc", "a meower");
+		trow->StoreChildRowIntoDB(&row);
+	}
+
 
 	SQLiteRow invrow(&inventory);
 	invrow.SetColumnValue("id", 2);
@@ -100,6 +116,11 @@ int main(void)
 	{
 		printf("Load FAILURE\n");
 	}
+
+
+
+
+
 	sqlite3_close(pDB);
 	printf("Closed database connection.\n");
 	return 0;

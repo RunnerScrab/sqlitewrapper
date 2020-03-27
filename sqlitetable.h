@@ -78,7 +78,7 @@ public:
 
 	bool IsForeignKey()
 	{
-		return KEY_FOREIGN == m_keytype;
+		return KEY_FOREIGN == m_keytype || KEY_PRIMARY_AND_FOREIGN == m_keytype;
 	}
 
 };
@@ -88,6 +88,7 @@ public:
 //using row data as input
 class SQLiteTable
 {
+	friend class SQLiteRow;
 public:
 	static sqlite3* m_static_pDB;
 	static void SetDBConnection(sqlite3* pDB);
@@ -99,22 +100,20 @@ public:
 #endif
 
 private:
-	friend class SQLiteRow;
+
 	std::vector<SQLiteColumn*> m_columns;
-	//A subtable is simply another table whose foreign key is set to the
-	//primary key of the primary table
+
 	std::map<const std::string, SQLiteTable*> m_subtablemap;
 
-	//A table may have multiple foreign keys, however,
-	//m_subtableforeign key is the key to the owning table for a table
-	//representing an array
 	std::vector<SQLiteColumn*> m_primary_keycols;
 	std::vector<SQLiteColumn*> m_foreign_keycols;
 	std::string m_tablename;
 
 	sqlite3* m_pDB;
 	bool m_bIsSubTable;
+#ifndef TESTING_
 	int m_refcount;
+#endif
 
 	int PerformUpsert(SQLiteRow* row, SQLiteRow* parent_row = 0);
 	//The a list of SQLite assignments to all the columns during an upsert (update/insert)
@@ -126,8 +125,6 @@ private:
 	//The names of all the columns along with type declarations, for CREATE operation
 	std::string ProducePropertyNameList();
 	std::string GetPrimaryKeyStringList();
-	std::string ProducePrimaryKeyPlaceholderList();
-	std::string ProduceForeignKeyPlaceholderList();
 	std::string GetForeignKeyStringList();
 	std::string ProduceSelectConditionString();
 	size_t GetPrimaryKeyCount()
@@ -148,8 +145,14 @@ public:
 		return m_tablename;
 	}
 
+
 	SQLiteTable* CreateSubTable(const std::string& name);
 	SQLiteTable* GetSubTable(const std::string& name);
+	#ifndef TESTING_
+	bool LoadSubTable(SQLiteRow* parent_row, CScriptArray* resultarray);
+	#else
+	bool LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow>& resultarray);
+	#endif
 
 	bool AddColumn(const std::string& name, SQLiteVariant::StoredType vartype,
 		       SQLiteColumn::KeyType keytype = SQLiteColumn::KeyType::KEY_NONE,
@@ -186,10 +189,6 @@ public:
 		return AddColumn(name, SQLiteVariant::StoredType::VARBLOB, keytype,
 				 foreigntable, foreignname);
 	}
-
-#ifndef TESTING_
-	bool LoadSubTable(SQLiteRow* parent_row, CScriptArray* resultarray);
-#endif
 
 	int LoadRow(SQLiteRow* row);
 	int StoreRow(SQLiteRow* row, SQLiteRow* pParentRow = 0);
