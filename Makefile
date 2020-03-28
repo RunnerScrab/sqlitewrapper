@@ -5,7 +5,7 @@ LDLIBS = -g -lpthread -ldl
 SOURCE = $(wildcard *.cpp)
 OBJS = $(SOURCE:.c=.o)
 LIBS = libsqlite3.a
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -Og -pg
 
 sqltest: ${OBJS} ${LIBS}
 	${CXX} ${OBJS} ${LIBS} -o sqltest ${LDLIBS} ${CFLAGS}

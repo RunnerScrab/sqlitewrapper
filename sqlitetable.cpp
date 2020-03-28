@@ -278,6 +278,7 @@ bool SQLiteTable::AddColumn(const std::string& name, SQLiteVariant::StoredType v
 std::string SQLiteTable::ProduceUpdateList()
 {
 	std::string buffer;
+	buffer.reserve(128);
 	size_t idx = 0, len = m_columns.size();
 	for(; idx < len; ++idx)
 	{
@@ -296,6 +297,7 @@ std::string SQLiteTable::ProduceUpdateList()
 std::string SQLiteTable::ProducePlaceholderList()
 {
 	std::string buffer;
+	buffer.reserve(128);
 	size_t idx = 0, len = m_columns.size();
 	for(; idx < len; ++idx)
 	{
@@ -311,6 +313,7 @@ std::string SQLiteTable::ProducePlaceholderList()
 std::string SQLiteTable::ProduceInsertValuesNameList()
 {
 	std::string buffer;
+	buffer.reserve(128);
 	size_t idx = 0, len = m_columns.size();
 	for(; idx < len; ++idx)
 	{
@@ -326,6 +329,7 @@ std::string SQLiteTable::ProduceInsertValuesNameList()
 std::string SQLiteTable::ProducePropertyNameList()
 {
 	std::string buffer;
+	buffer.reserve(256);
 	size_t idx = 0, len = m_columns.size();
 
 	for(; idx < len; ++idx)
@@ -354,6 +358,7 @@ std::string SQLiteTable::ProducePropertyNameList()
 std::string SQLiteTable::GetPrimaryKeyStringList()
 {
 	std::string retval;
+	retval.reserve(64);
 	size_t idx = 0;
 	size_t len = m_primary_keycols.size();
 	for(; idx < len; ++idx)
@@ -373,6 +378,7 @@ std::string SQLiteTable::GetPrimaryKeyStringList()
 std::string SQLiteTable::GetForeignKeyStringList()
 {
 	std::string retval;
+	retval.reserve(64);
 	size_t idx = 0;
 	size_t len = m_foreign_keycols.size();
 	for(; idx < len; ++idx)
@@ -401,6 +407,7 @@ std::string SQLiteTable::ProduceSubTableSelectConditionString()
 	}
 
 	std::string retval;
+	retval.reserve(128);
 	for(size_t idx = 0, len = m_foreign_keycols.size();
 	    idx < len; ++idx)
 	{
@@ -430,6 +437,7 @@ std::string SQLiteTable::ProduceSelectConditionString()
 	{
 		size_t idx = 0;
 		std::string retval;
+		retval.reserve(128);
 		for(; idx < pkeys; ++idx)
 		{
 			SQLiteColumn* pkeycol = m_primary_keycols[idx];
@@ -802,7 +810,9 @@ SQLiteRow* SQLiteTable::CreateRow()
 
 int SQLiteTable::PerformUpsert(SQLiteRow* pRow, SQLiteRow* pParentRow)
 {
-	std::string insertstr = "INSERT INTO "+ m_tablename;
+	std::string insertstr;
+	insertstr.reserve(256);
+	insertstr = "INSERT INTO " + m_tablename;
 	insertstr += "(" + ProduceInsertValuesNameList() + ") VALUES(";
 	insertstr += ProducePlaceholderList() + ") ON CONFLICT(";
 	insertstr += GetPrimaryKeyStringList() +") DO UPDATE SET ";

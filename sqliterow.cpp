@@ -130,8 +130,9 @@ void SQLiteRow::InitFromTable(SQLiteTable* table)
 	{
 		if(SQLiteColumn::KeyType::KEY_NONE != col->GetKeyType())
 		{
-			//Don't set a default value for a key type so we can tell
-			//easily if one was not provided by the user
+			//Don't set a default value for a key type (what we're
+			//doing below) so we can tell easily if one was not
+			//provided by the user
 			continue;
 		}
 
@@ -185,20 +186,20 @@ SQLiteRow::SQLiteRow(SQLiteTable* table)
 
 SQLiteRow::~SQLiteRow()
 {
-	size_t idx = 0, len = m_values.size();
-	for(; idx < len; ++idx)
+	for(std::unordered_map<std::string, SQLiteVariant*>::iterator it = m_valuemap.begin(),
+		    end = m_valuemap.end(); it != end; ++it)
 	{
-		delete m_values[idx];
+		delete it->second;
 	}
 }
 
 void SQLiteRow::ClearValues()
 {
-	for(SQLiteVariant* var : m_values)
+	for(std::unordered_map<std::string, SQLiteVariant*>::iterator it = m_valuemap.begin(),
+		    end = m_valuemap.end(); it != end; ++it)
 	{
-		var->ClearValue();
+		it->second->ClearValue();
 	}
-	m_valuemap.clear();
 }
 
 void SQLiteRow::SetColumnValue(const std::string& colname, const SQLiteVariant* value)
@@ -211,9 +212,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const int v)
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -224,9 +224,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const long long v)
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -237,9 +236,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const unsigned int v)
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -250,9 +248,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const unsigned long l
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -263,9 +260,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const float v)
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -276,9 +272,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const double v)
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -289,9 +284,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const std::string& v)
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(v);
@@ -302,9 +296,8 @@ void SQLiteRow::SetColumnValue(const std::string& colname, const char* data, con
 	SQLiteVariant* var = m_valuemap[colname];
 	if(!var)
 	{
-		m_values.emplace_back(new SQLiteVariant());
-		m_valuemap[colname] = m_values.back();
-		var = m_values.back();
+		var = new SQLiteVariant();
+		m_valuemap[colname] = var;
 	}
 
 	var->SetValue(data, datalen);
@@ -451,7 +444,6 @@ bool SQLiteRow::LoadFromDB()
 {
 	if(m_table)
 	{
-
 		return (m_table->LoadRow(this) != SQLITE_ERROR) ? true : false;
 	}
 	else

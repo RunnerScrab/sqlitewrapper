@@ -25,7 +25,6 @@ public:
 
 	static SQLiteRow* Factory(SQLiteTable*);
 private:
-	std::vector<SQLiteVariant*> m_values;
 	std::unordered_map<std::string, SQLiteVariant*> m_valuemap;
 	SQLiteTable* m_table;
 
