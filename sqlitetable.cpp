@@ -552,28 +552,32 @@ bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, CScriptArray* resultarray)
 bool SQLiteTable::LoadSubTable(SQLiteRow* parent_row, std::vector<SQLiteRow*>& resultarray)
 {
 	//Called from the sub table
-
-	//asIScriptContext* ctx = asGetActiveContext();
+#ifndef TESTING_
+	asIScriptContext* ctx = asGetActiveContext();
+#endif
 	if(!m_bIsSubTable)
 	{
-		//ctx->SetException("Table is not a subtable.");
-		//return SQLITE_ERROR;
+#ifndef TESTING_
+		ctx->SetException("Table is not a subtable.");
+#endif
 		return false;
 	}
 
 	int result = DoesSQLiteTableExist(m_pDB, m_tablename.c_str());
 	if(result <= 0)
 	{
-		//ctx->SetException("Table does not exist.");
-		//return SQLITE_ERROR;
 		return false;
 	}
 
-	sqlite3_stmt* query = 0;
-	std::string selectquerystr = "select " + ProduceInsertValuesNameList() + " from " +
-		m_tablename + " where " + ProduceSubTableSelectConditionString() + ";";
+	if(m_cachedsubtableloadquery.empty())
+	{
+		m_cachedsubtableloadquery.reserve(128);
+		m_cachedsubtableloadquery = "select " + ProduceInsertValuesNameList() + " from " +
+			m_tablename + " where " + ProduceSubTableSelectConditionString() + ";";
+	}
+	const std::string& selectquerystr = m_cachedsubtableloadquery;
 
-	dbgprintf("LoadSubTable Query: %s\n", selectquerystr.c_str());
+	sqlite3_stmt* query = 0;
 	result = sqlite3_prepare_v2(m_pDB, selectquerystr.c_str(), -1, &query, 0);
 	if(SQLITE_OK != result)
 	{
@@ -672,8 +676,16 @@ int SQLiteTable::LoadRow(SQLiteRow* pRow)
 	}
 
 	sqlite3_stmt* query = 0;
-	std::string selectquerystr = "select " + ProduceInsertValuesNameList() + " from " +
-		m_tablename + " where " + ProduceSelectConditionString() + ";";
+
+	if(m_cachedloadquery.empty())
+	{
+		m_cachedloadquery.reserve(128);
+		m_cachedloadquery = "select " + ProduceInsertValuesNameList() + " from " +
+			m_tablename + " where " + ProduceSelectConditionString() + ";";
+	}
+
+	const std::string& selectquerystr = m_cachedloadquery;
+
 	dbgprintf("Query: %s\n", selectquerystr.c_str());
 	result = sqlite3_prepare_v2(m_pDB, selectquerystr.c_str(), -1, &query, 0);
 	if(SQLITE_OK != result)
@@ -810,13 +822,17 @@ SQLiteRow* SQLiteTable::CreateRow()
 
 int SQLiteTable::PerformUpsert(SQLiteRow* pRow, SQLiteRow* pParentRow)
 {
-	std::string insertstr;
-	insertstr.reserve(256);
-	insertstr = "INSERT INTO " + m_tablename;
-	insertstr += "(" + ProduceInsertValuesNameList() + ") VALUES(";
-	insertstr += ProducePlaceholderList() + ") ON CONFLICT(";
-	insertstr += GetPrimaryKeyStringList() +") DO UPDATE SET ";
-	insertstr += ProduceUpdateList() + ";";
+	if(m_cachedstorequery.empty())
+	{
+		m_cachedstorequery.reserve(256);
+		m_cachedstorequery = "INSERT INTO " + m_tablename;
+		m_cachedstorequery += "(" + ProduceInsertValuesNameList() + ") VALUES(";
+		m_cachedstorequery += ProducePlaceholderList() + ") ON CONFLICT(";
+		m_cachedstorequery += GetPrimaryKeyStringList() +") DO UPDATE SET ";
+		m_cachedstorequery += ProduceUpdateList() + ";";
+	}
+
+	const std::string& insertstr = m_cachedstorequery;
 
 	dbgprintf("Insert str: %s\n", insertstr.c_str());
 	sqlite3_stmt* query = 0;

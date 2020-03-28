@@ -108,6 +108,8 @@ private:
 	std::vector<SQLiteColumn*> m_primary_keycols;
 	std::vector<SQLiteColumn*> m_foreign_keycols;
 	std::string m_tablename;
+	std::string m_cachedloadquery, m_cachedstorequery;
+	std::string m_cachedsubtableloadquery;
 
 	sqlite3* m_pDB;
 	bool m_bIsSubTable;
